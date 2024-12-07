@@ -1,0 +1,62 @@
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+
+# Load the data
+data = pd.read_csv('public_health_data.csv')
+
+# Convert 'Date' to datetime
+data['Date'] = pd.to_datetime(data['Date'])
+
+# Summary statistics for key metrics
+summary = data.groupby('Region')[['Infected', 'Recovered', 'Deaths', 'Behavioral_Score']].mean().reset_index()
+
+# Interactive visualization of disease spread over time
+fig1 = px.line(
+    data, 
+    x='Date', 
+    y='Infected', 
+    color='Region', 
+    title="Infection Trends Over Time",
+    labels={'Infected': 'Number of Infected Individuals'},
+    hover_data=['Recovered', 'Deaths']
+)
+fig1.update_layout(xaxis_title="Date", yaxis_title="Number of Cases")
+
+# Behavioral impact on infection rates
+fig2 = px.scatter(
+    data, 
+    x='Behavioral_Score', 
+    y='Infected', 
+    color='Region', 
+    size='Deaths',
+    title="Impact of Behavioral Scores on Infection Rates",
+    labels={'Behavioral_Score': 'Behavioral Score', 'Infected': 'Number of Infected Individuals'},
+    hover_data=['Recovered', 'Deaths']
+)
+fig2.update_layout(xaxis_title="Behavioral Score", yaxis_title="Number of Infected Individuals")
+
+# Regional comparison of health metrics
+fig3 = go.Figure()
+regions = summary['Region'].unique()
+for region in regions:
+    region_data = summary[summary['Region'] == region]
+    fig3.add_trace(go.Bar(
+        x=['Infected', 'Recovered', 'Deaths'],
+        y=[region_data['Infected'].values[0], region_data['Recovered'].values[0], region_data['Deaths'].values[0]],
+        name=region
+    ))
+fig3.update_layout(
+    title="Regional Comparison of Health Metrics",
+    xaxis_title="Metric",
+    yaxis_title="Average Count",
+    barmode='group'
+)
+
+# Show the visualizations
+fig1.show()
+fig2.show()
+fig3.show()
+
+# Save summary to CSV for further use
+summary.to_csv('public_health_summary.csv', index=False)
